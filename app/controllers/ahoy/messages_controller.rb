@@ -34,13 +34,16 @@ module Ahoy
       digest = "SHA1"
       signature = OpenSSL::HMAC.hexdigest(digest, AhoyEmail.secret_token, url)
 
+      redirect_options = {}
+      redirect_options[:allow_other_host] = true if ActionPack::VERSION::MAJOR >= 7      
+
       if ActiveSupport::SecurityUtils.secure_compare(user_signature, signature)
         publish :click, url: params[:url]
 
-        redirect_to url
+        redirect_to url, **redirect_options
       else
         # TODO show link expired page with link to invalid redirect url in 2.0
-        redirect_to AhoyEmail.invalid_redirect_url || main_app.root_url
+        redirect_to(AhoyEmail.invalid_redirect_url, **redirect_options) || main_app.root_url
       end
     end
 
