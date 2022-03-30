@@ -1,4 +1,5 @@
 # Ahoy Email
+## NOTE: This is a fork of the 1.1 source of [ankane/ahoy_email](https://github.com/ankane/ahoy_email) that adds support for Rails 7 since v2 removed open tracking.
 
 First-party email analytics for Rails
 
