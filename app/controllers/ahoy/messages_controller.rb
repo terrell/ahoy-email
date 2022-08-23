@@ -8,7 +8,7 @@ module Ahoy
     before_action :set_message
 
     def open
-      # TODO move to MessageSubscriber in 2.0
+      # TODO: move to MessageSubscriber in 2.0
       if @message && !@message.opened_at
         @message.opened_at = Time.now
         @message.save!
@@ -16,11 +16,12 @@ module Ahoy
 
       publish :open
 
-      send_data Base64.decode64("R0lGODlhAQABAPAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=="), type: "image/gif", disposition: "inline"
+      send_data Base64.decode64('R0lGODlhAQABAPAAAAAAAAAAACH5BAEAAAAALAAAAAABAAEAAAICRAEAOw=='), type: 'image/gif',
+                                                                                                 disposition: 'inline'
     end
 
     def click
-      # TODO move to MessageSubscriber in 2.0
+      # TODO: move to MessageSubscriber in 2.0
       if @message && !@message.clicked_at
         @message.clicked_at = Time.now
         @message.opened_at ||= @message.clicked_at if @message.respond_to?(:opened_at=)
@@ -30,31 +31,32 @@ module Ahoy
       user_signature = params[:signature].to_s
       url = params[:url].to_s
 
-      # TODO sign more than just url and transition to HMAC-SHA256
-      digest = "SHA1"
+      # TODO: sign more than just url and transition to HMAC-SHA256
+      digest = 'SHA1'
       signature = OpenSSL::HMAC.hexdigest(digest, AhoyEmail.secret_token, url)
 
       redirect_options = {}
-      redirect_options[:allow_other_host] = true if ActionPack::VERSION::MAJOR >= 7      
+      redirect_options[:allow_other_host] = true if ActionPack::VERSION::MAJOR >= 7
 
       if ActiveSupport::SecurityUtils.secure_compare(user_signature, signature)
         publish :click, url: params[:url]
 
         redirect_to url, **redirect_options
       else
-        # TODO show link expired page with link to invalid redirect url in 2.0
-        redirect_to(AhoyEmail.invalid_redirect_url, **redirect_options) || main_app.root_url
+        # TODO: show link expired page with link to invalid redirect url in 2.0
+        # redirect_to(AhoyEmail.invalid_redirect_url, **redirect_options) || main_app.root_url
+        redirect_to main_app.root_url, **redirect_options
       end
     end
 
     protected
 
     def set_message
-      @token =  params[:id]
+      @token = params[:id]
 
       model = AhoyEmail.message_model
 
-      return if model.respond_to?(:column_names) && !model.column_names.include?("token")
+      return if model.respond_to?(:column_names) && !model.column_names.include?('token')
 
       @message = model.where(token: @token).first
     end
@@ -62,12 +64,12 @@ module Ahoy
     def publish(name, event = {})
       AhoyEmail.subscribers.each do |subscriber|
         subscriber = subscriber.new if subscriber.is_a?(Class) && !subscriber.respond_to?(name)
-        if subscriber.respond_to?(name)
-          event[:message] = @message
-          event[:controller] = self
-          event[:token] = @token
-          subscriber.send name, event
-        end
+        next unless subscriber.respond_to?(name)
+
+        event[:message] = @message
+        event[:controller] = self
+        event[:token] = @token
+        subscriber.send name, event
       end
     end
   end
